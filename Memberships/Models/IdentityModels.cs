@@ -33,5 +33,12 @@ namespace Memberships.Models
 
         public DbSet<Section> Section { get; set; }
         public DbSet<Item> Items { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductType> ProductTypes { get; set; }
+        public DbSet<ProductLinkText> ProductLinkTexts { get; set; }
+        public DbSet<Subscription> Subscription { get; set; }
+        public DbSet<ProductItem> ProductItems { get; set; }
+        public DbSet<SubscriptionProduct> SubscriptionProduct { get; set; }
+        public DbSet<UserSubscription> UserSubscriptions { get; set; }
     }
 }
