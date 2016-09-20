@@ -27,7 +27,7 @@ namespace Memberships
                       "~/Content/bootstrap.css",
                       "~/Content/site.css"));
 
-            bundles.Add(new StyleBundle("~/bundles/admin").Include("~/Scripts/AdminMenu.js"));
+            bundles.Add(new ScriptBundle("~/bundles/admin").Include("~/Scripts/AdminMenu.js"));
         }
     }
 }

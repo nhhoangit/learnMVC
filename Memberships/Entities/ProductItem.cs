@@ -7,7 +7,8 @@ using System.Web;
 
 namespace Memberships.Entities
 {
-    [Table("ProductItem")]
+    [Table("ProductItem")]
+
     public class ProductItem
     {
         [Required]
