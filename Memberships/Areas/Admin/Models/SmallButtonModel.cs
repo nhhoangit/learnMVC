@@ -23,7 +23,7 @@ namespace Memberships.Areas.Admin.Models
                 var param = new StringBuilder("?");
                 if (Id != null && Id > 0)
                    // param.Append(String.Format("{0}={1}&", "id", Id));
-                    param.Append($"id={Id}");
+                    param.Append($"id={Id}&");
                 if (ItemId != null && ItemId > 0)
                     param.Append(String.Format("{0}={1}&", "itemId", ItemId));
                 if (ProductId != null && ProductId > 0)
