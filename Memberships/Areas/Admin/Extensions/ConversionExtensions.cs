@@ -14,8 +14,13 @@ namespace Memberships.Areas.Admin.Extensions
     {
         public static async Task<IEnumerable<ProductModel>> Convert(this IEnumerable<Product> products, ApplicationDbContext db)
         {
+
+            if (products.Count().Equals(0))
+                return new List<ProductModel>();
+
             var texts = await db.ProductLinkTexts.ToListAsync();
             var types = await db.ProductTypes.ToListAsync();
+
 
             return from p in products
                    select new ProductModel

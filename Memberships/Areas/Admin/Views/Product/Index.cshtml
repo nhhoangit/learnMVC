@@ -15,9 +15,10 @@
         <th>
             @Html.DisplayNameFor(model => model.Title)
         </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Description)
-        </th>
+        <th>@Html.DisplayNameFor(model => model.Description)</th>
+        <th>@Html.DisplayNameFor(model => model.ProductLinkTexts)</th>
+        <th>@Html.DisplayNameFor(model => model.ProductTypes)</th>
+
       
        
         <th></th>
@@ -28,16 +29,22 @@
         <td>
             @Html.DisplayFor(modelItem => item.Title)
         </td>
+        <td>@Html.DisplayFor(modelItem => item.Description)</td>
+
         <td>
-            @Html.DisplayFor(modelItem => item.Description)
+            @Html.DisplayFor(modelItem => item.ProductLinkText)
+             (@{@Html.DisplayFor(modelItem => item.ProductLinkTextId)})
         </td>
-       
-      
         <td>
-         
+            @Html.DisplayFor(modelItem => item.ProductType)
+        (-{@Html.DisplayFor(modelItem => item.ProductTypeId)}-)
+    </td>
+
+      
+       
 
             @Html.Partial("_TableButtonPartial",new SmallButtonModel { Id = item.Id})
-        </td>
+       
     </tr>
 }
 

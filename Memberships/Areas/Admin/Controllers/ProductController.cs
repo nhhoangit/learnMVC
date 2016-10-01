@@ -9,6 +9,8 @@ using System.Web;
 using System.Web.Mvc;
 using Memberships.Entities;
 using Memberships.Models;
+using Memberships.Areas.Admin.Extensions;
+using Memberships.Areas.Admin.Models;
 
 namespace Memberships.Areas.Admin.Controllers
 {
@@ -19,7 +21,10 @@ namespace Memberships.Areas.Admin.Controllers
         // GET: Admin/Product
         public async Task<ActionResult> Index()
         {
-            return View(await db.Products.ToListAsync());
+
+            var products = await db.Products.ToListAsync();
+            var model = await products.Convert(db);
+            return View(model);
         }
 
         // GET: Admin/Product/Details/5
@@ -38,9 +43,14 @@ namespace Memberships.Areas.Admin.Controllers
         }
 
         // GET: Admin/Product/Create
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
-            return View();
+            var model = new ProductModel
+            {
+                ProductLinkTexts = await db.ProductLinkTexts.ToListAsync(),
+                ProductTypes = await db.ProductTypes.ToListAsync(),
+            };
+            return View(model);
         }
 
         // POST: Admin/Product/Create
