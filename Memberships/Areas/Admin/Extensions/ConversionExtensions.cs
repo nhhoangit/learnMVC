@@ -7,6 +7,7 @@ using Memberships.Areas.Admin.Models;
 using System.Threading.Tasks;
 using Memberships.Entities;
 using Memberships.Models;
+using System.Transactions;
 
 namespace Memberships.Areas.Admin.Extensions
 {
@@ -56,6 +57,68 @@ namespace Memberships.Areas.Admin.Extensions
             model.ProductTypes.Add(type);
 
             return model;
+        }
+        public static async Task<List<ProductItemModel>> Convert(this IQueryable<ProductItem> productItems, ApplicationDbContext db)
+        {
+            if (productItems.Count().Equals(0))
+                return new List<ProductItemModel>();
+
+            var model = await (
+                from pi in productItems
+                select new ProductItemModel
+                {
+                    ItemId = pi.ItemId,
+                    ProductId = pi.ProductId,
+                    ItemTitle = db.Items.FirstOrDefault(i => i.Id.Equals(pi.ItemId)).Title,
+                    ProductTitle = db.Products.FirstOrDefault(p => p.Id.Equals(pi.ProductId)).Title
+                }
+                ).ToListAsync();
+            return model;
+        }
+        public static async Task<ProductItemModel> Convert(this ProductItem productItem, ApplicationDbContext db)
+        {
+            var model = new ProductItemModel
+            {
+                ItemId = productItem.ItemId,
+                ProductId = productItem.ProductId,
+                Items = await db.Items.ToListAsync(),
+                Products = await db.Products.ToListAsync()
+            };
+            return model;
+        }
+        public static async Task<bool> CanChange(this ProductItem productItem, ApplicationDbContext db)
+        {
+            var oldPI = await db.ProductItems.CountAsync(pi => pi.ProductId.Equals(productItem.OldProductId) && pi.ItemId.Equals(productItem.OldItemId));
+            var newPI = await db.ProductItems.CountAsync(pi => pi.ProductId.Equals(productItem.ProductId) && pi.ItemId.Equals(productItem.ItemId));
+
+            return oldPI.Equals(1) && newPI.Equals(0);
+        }
+        public static async Task Change(this ProductItem productItem, ApplicationDbContext db)
+        {
+            var oldPI = await db.ProductItems.FirstOrDefaultAsync(pi => pi.ProductId.Equals(productItem.OldProductId) && pi.ItemId.Equals(productItem.OldItemId));
+            var newPI = await db.ProductItems.FirstOrDefaultAsync(pi => pi.ProductId.Equals(productItem.ProductId) && pi.ItemId.Equals(productItem.ItemId));
+
+            if (oldPI != null && newPI == null)
+            {
+                newPI = new ProductItem
+                {
+                    ItemId = productItem.ItemId,
+                    ProductId = productItem.ProductId
+                };
+            }
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                try
+                {
+                    db.ProductItems.Remove(oldPI);
+                    db.ProductItems.Add(newPI);
+                    await db.SaveChangesAsync();
+                    transaction.Complete();
+                }
+                catch {
+                    transaction.Dispose();
+                }
+            }
         }
     }
 }
