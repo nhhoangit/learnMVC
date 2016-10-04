@@ -27,22 +27,24 @@ namespace Memberships.Areas.Admin.Controllers
         }
 
         // GET: Admin/ProductItem/Details/5
-        public async Task<ActionResult> Details(int? id)
+        public async Task<ActionResult> Details(int? itemId, int? productId)
         {
-            if (id == null)
+            if (itemId == null || productId == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            ProductItem productItem = await db.ProductItems.FindAsync(id);
+            ProductItem productItem = await GetProductItem(itemId, productId);
             if (productItem == null)
             {
                 return HttpNotFound();
             }
-            return View(productItem);
+            var model = await productItem.Convert(db, false);
+
+            return View(model);
         }
 
         // GET: Admin/ProductItem/Create
-        public async  Task<ActionResult> Create()
+        public async Task<ActionResult> Create()
         {
             var model = new ProductItemModel
             {
@@ -61,9 +63,16 @@ namespace Memberships.Areas.Admin.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.ProductItems.Add(productItem);
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                var isExist = await productItem.IsExist(db);
+                if (!isExist)
+                {
+                    db.ProductItems.Add(productItem);
+
+                    await db.SaveChangesAsync();
+
+                }
+                    return RedirectToAction("Index");
+                
             }
 
             return View(productItem);
@@ -76,7 +85,7 @@ namespace Memberships.Areas.Admin.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            ProductItem productItem = await GetProductItem(itemId,productId);
+            ProductItem productItem = await GetProductItem(itemId, productId);
             if (productItem == null)
             {
                 return HttpNotFound();
@@ -94,37 +103,38 @@ namespace Memberships.Areas.Admin.Controllers
             if (ModelState.IsValid)
             {
                 var canChange = await productItem.CanChange(db);
-                if(canChange)
+                if (canChange)
                 {
                     await productItem.Change(db);
                 }
-             
+
                 return RedirectToAction("Index");
             }
             return View(productItem);
         }
 
         // GET: Admin/ProductItem/Delete/5
-        public async Task<ActionResult> Delete(int? id)
+        public async Task<ActionResult> Delete(int? itemId, int? productId)
         {
-            if (id == null)
+            if (itemId == null || productId == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            ProductItem productItem = await db.ProductItems.FindAsync(id);
+            ProductItem productItem = await GetProductItem(itemId, productId);
             if (productItem == null)
             {
                 return HttpNotFound();
             }
-            return View(productItem);
+            var model = await productItem.Convert(db, false);
+            return View(model);
         }
 
         // POST: Admin/ProductItem/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
+        public async Task<ActionResult> DeleteConfirmed(int itemId, int productId)
         {
-            ProductItem productItem = await db.ProductItems.FindAsync(id);
+            ProductItem productItem = await GetProductItem(itemId, productId);
             db.ProductItems.Remove(productItem);
             await db.SaveChangesAsync();
             return RedirectToAction("Index");
@@ -148,8 +158,10 @@ namespace Memberships.Areas.Admin.Controllers
 
                 var productItem = await db.ProductItems.FirstOrDefaultAsync(pi => pi.ProductId.Equals(prdId) && pi.ItemId.Equals(itmId));
                 return productItem;
-            }catch
-            { return null;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

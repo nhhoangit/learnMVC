@@ -75,16 +75,24 @@ namespace Memberships.Areas.Admin.Extensions
                 ).ToListAsync();
             return model;
         }
-        public static async Task<ProductItemModel> Convert(this ProductItem productItem, ApplicationDbContext db)
+        public static async Task<ProductItemModel> Convert(this ProductItem productItem, ApplicationDbContext db, bool addListData=true)
         {
             var model = new ProductItemModel
             {
                 ItemId = productItem.ItemId,
                 ProductId = productItem.ProductId,
-                Items = await db.Items.ToListAsync(),
-                Products = await db.Products.ToListAsync()
+                Items = addListData? await db.Items.ToListAsync():null,
+                Products = addListData? await db.Products.ToListAsync():null,
+                ItemTitle = (await db.Items.FirstOrDefaultAsync(i=>i.Id.Equals(productItem.ItemId))).Title,
+                ProductTitle = (await db.Products.FirstOrDefaultAsync(p=>p.Id.Equals(productItem.ProductId))).Title
+
             };
             return model;
+        }
+        public static async Task<bool> IsExist(this ProductItem productItem, ApplicationDbContext db)
+        {
+            var newPI = await db.ProductItems.CountAsync(pi => pi.ProductId.Equals(productItem.ProductId) && pi.ItemId.Equals(productItem.ItemId));
+            return newPI.Equals(1);
         }
         public static async Task<bool> CanChange(this ProductItem productItem, ApplicationDbContext db)
         {
