@@ -69,18 +69,20 @@ namespace Memberships.Areas.Admin.Controllers
         }
 
         // GET: Admin/SubscriptionProduct/Edit/5
-        public async Task<ActionResult> Edit(int? id)
+        public async Task<ActionResult> Edit(int? subscriptionId, int? productId)
         {
-            if (id == null)
+            if (subscriptionId == null || productId == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            SubscriptionProduct subscriptionProduct = await db.SubscriptionProducts.FindAsync(id);
+            SubscriptionProduct subscriptionProduct = await GetSubscriptionProduct(subscriptionId, productId);
+
+
             if (subscriptionProduct == null)
             {
                 return HttpNotFound();
             }
-            return View(subscriptionProduct);
+            return View(await subscriptionProduct.Convert(db));
         }
 
         // POST: Admin/SubscriptionProduct/Edit/5
@@ -88,13 +90,18 @@ namespace Memberships.Areas.Admin.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "ProductId,SubscriptionId")] SubscriptionProduct subscriptionProduct)
+        public async Task<ActionResult> Edit([Bind(Include = "ProductId,SubscriptionId,OldSubscriptionId,OldProductId")] SubscriptionProduct subscriptionProduct)
         {
             if (ModelState.IsValid)
             {
-                db.Entry(subscriptionProduct).State = EntityState.Modified;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                var canChange = await subscriptionProduct.CanChange(db);
+                if(canChange)
+                {
+                    await subscriptionProduct.Change(db);
+                
+                }
+               return RedirectToAction("Index");
+               
             }
             return View(subscriptionProduct);
         }
@@ -132,6 +139,21 @@ namespace Memberships.Areas.Admin.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+        private async Task<SubscriptionProduct> GetSubscriptionProduct(int? subscriptionId, int? productId)
+        {
+            try
+            {
+                int subsId = 0, prdId = 0;
+                int.TryParse(subscriptionId.ToString(), out subsId);
+                int.TryParse(productId.ToString(), out prdId);
+                var subscriptionProduct = await db.SubscriptionProducts.FirstOrDefaultAsync(pi => pi.ProductId.Equals(prdId) && pi.SubscriptionId.Equals(subsId));
+
+                return subscriptionProduct;
+            }catch
+            {
+                return null;
+            }
         }
     }
 }

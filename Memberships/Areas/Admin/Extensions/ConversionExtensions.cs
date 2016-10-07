@@ -121,20 +121,7 @@ namespace Memberships.Areas.Admin.Extensions
             };
             return model;
         }
-        public static async Task<SubscriptionProductModel> Convert(this SubscriptionProduct subscriptionProduct, ApplicationDbContext db, bool addListData = true)
-        {
-            var model = new SubscriptionProductModel
-            {
-                SubscriptionId = subscriptionProduct.SubscriptionId,
-                ProductId = subscriptionProduct.ProductId,
-                Subscriptions = addListData ? await db.Subscriptions.ToListAsync() : null,
-                Products = addListData ? await db.Products.ToListAsync() : null,
-                SubscriptionTitle = (await db.Subscriptions.FirstOrDefaultAsync(i => i.Id.Equals(subscriptionProduct.SubscriptionId))).Title,
-                ProductTitle = (await db.Products.FirstOrDefaultAsync(p => p.Id.Equals(subscriptionProduct.ProductId))).Title
 
-            };
-            return model;
-        }
         public static async Task<bool> IsExist(this ProductItem productItem, ApplicationDbContext db)
         {
             var newPI = await db.ProductItems.CountAsync(pi => pi.ProductId.Equals(productItem.ProductId) && pi.ItemId.Equals(productItem.ItemId));
