@@ -11,9 +11,11 @@ using Memberships.Entities;
 using Memberships.Models;
 using Memberships.Areas.Admin.Extensions;
 using Memberships.Areas.Admin.Models;
+using System.Transactions;
 
 namespace Memberships.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class ProductController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -128,9 +130,26 @@ namespace Memberships.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            Product product = await db.Products.FindAsync(id);
-            db.Products.Remove(product);
-            await db.SaveChangesAsync();
+
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                Product product = await db.Products.FindAsync(id);
+                try
+                {
+                    var prodItem = db.ProductItems.Where(pi => pi.ProductId.Equals(id));
+                    db.ProductItems.RemoveRange(prodItem);
+                    var prodSubs = db.SubscriptionProducts.Where(ps => ps.ProductId.Equals(id));
+                    db.SubscriptionProducts.RemoveRange(prodSubs);
+                    db.Products.Remove(product);
+                    await db.SaveChangesAsync();
+                    transaction.Complete();
+                }
+                catch
+                {
+                    transaction.Dispose();
+                }
+            }
+
             return RedirectToAction("Index");
         }
 

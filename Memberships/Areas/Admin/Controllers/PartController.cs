@@ -12,6 +12,7 @@ using Memberships.Models;
 
 namespace Memberships.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class PartController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -112,8 +113,13 @@ namespace Memberships.Areas.Admin.Controllers
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
             Part part = await db.Parts.FindAsync(id);
-            db.Parts.Remove(part);
-            await db.SaveChangesAsync();
+            var isUnused = await db.Items.CountAsync(i => i.PartId.Equals(id)) == 0;
+            if(isUnused)
+            {
+                db.Parts.Remove(part);
+                await db.SaveChangesAsync();
+            }
+            
             return RedirectToAction("Index");
         }
 

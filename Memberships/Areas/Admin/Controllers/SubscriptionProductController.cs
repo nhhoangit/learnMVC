@@ -14,6 +14,7 @@ using Memberships.Areas.Admin.Models;
 
 namespace Memberships.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class SubscriptionProductController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -25,18 +26,18 @@ namespace Memberships.Areas.Admin.Controllers
         }
 
         // GET: Admin/SubscriptionProduct/Details/5
-        public async Task<ActionResult> Details(int? id)
+        public async Task<ActionResult> Details(int? subscriptionId, int? productId)
         {
-            if (id == null)
+            if (subscriptionId == null || productId == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            SubscriptionProduct subscriptionProduct = await db.SubscriptionProducts.FindAsync(id);
+            SubscriptionProduct subscriptionProduct = await GetSubscriptionProduct(subscriptionId, productId);
             if (subscriptionProduct == null)
             {
                 return HttpNotFound();
             }
-            return View(subscriptionProduct);
+            return View(subscriptionProduct.Convert(db));
         }
 
         // GET: Admin/SubscriptionProduct/Create
@@ -107,26 +108,26 @@ namespace Memberships.Areas.Admin.Controllers
         }
 
         // GET: Admin/SubscriptionProduct/Delete/5
-        public async Task<ActionResult> Delete(int? id)
+        public async Task<ActionResult> Delete(int? subscriptionId, int? productId)
         {
-            if (id == null)
+            if (subscriptionId == null || productId == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            SubscriptionProduct subscriptionProduct = await db.SubscriptionProducts.FindAsync(id);
+            SubscriptionProduct subscriptionProduct = await GetSubscriptionProduct(subscriptionId, productId);
             if (subscriptionProduct == null)
             {
                 return HttpNotFound();
             }
-            return View(subscriptionProduct);
+            return View(await subscriptionProduct.Convert(db));
         }
 
         // POST: Admin/SubscriptionProduct/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
+        public async Task<ActionResult> DeleteConfirmed(int subscriptionId, int productId)
         {
-            SubscriptionProduct subscriptionProduct = await db.SubscriptionProducts.FindAsync(id);
+            SubscriptionProduct subscriptionProduct = await GetSubscriptionProduct(subscriptionId, productId);
             db.SubscriptionProducts.Remove(subscriptionProduct);
             await db.SaveChangesAsync();
             return RedirectToAction("Index");

@@ -12,6 +12,7 @@ using Memberships.Models;
 
 namespace Memberships.Areas.Admin.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class ProductLinkTextController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -112,8 +113,13 @@ namespace Memberships.Areas.Admin.Controllers
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
             ProductLinkText productLinkText = await db.ProductLinkTexts.FindAsync(id);
-            db.ProductLinkTexts.Remove(productLinkText);
-            await db.SaveChangesAsync();
+            var isUnused = await db.Products.CountAsync(p => p.ProductLinkTextId.Equals(id)) == 0;
+            if (isUnused)
+            {
+                db.ProductLinkTexts.Remove(productLinkText);
+                await db.SaveChangesAsync();
+            }
+
             return RedirectToAction("Index");
         }
 
