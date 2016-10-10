@@ -10,10 +10,13 @@ namespace Memberships.Models
     {
         [Display(Name = "User Id")]
 
-        public string Id { get; set; }        [Required]
+        public string Id { get; set; }
+        [Required]
         [EmailAddress]
         [Display(Name = "Email")]
-        public string Email { get; set; }        [Display(Name = "First Name")]
+        public string Email { get; set; }
+
+        [Display(Name = "First Name")]
         [StringLength(30, ErrorMessage = "The {0} must be at least {2}  characters long.", MinimumLength = 2)]
         public string FirstName { get; set; }
         [Required]

@@ -9,6 +9,8 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using Memberships.Models;
+using Memberships.Extensions;
+using System.Collections.Generic;
 
 namespace Memberships.Controllers
 {
@@ -21,7 +23,12 @@ namespace Memberships.Controllers
         public AccountController()
         {
         }
-
+        public async Task<ActionResult> Index()
+        {
+            var users = new List<UserViewModel>();
+            await users.GetUsers();
+            return View(users);
+        }
         public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
         {
             UserManager = userManager;
