@@ -2,16 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 
-namespace Memberships.Entities
+namespace Memberships.Models
 {
-    [Table("Subscription")]
-    public class Subscription
+    public class UserSubscriptionModel
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    
         public int Id { get; set; }
         [MaxLength(255)]
         [Required]
@@ -21,6 +19,7 @@ namespace Memberships.Entities
         [MaxLength(20)]
         [DisplayName("Registration Code")]
         public string RegistrationCode { get; set; }
-
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }
