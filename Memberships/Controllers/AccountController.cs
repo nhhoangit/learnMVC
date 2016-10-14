@@ -12,6 +12,8 @@ using Memberships.Models;
 using Memberships.Extensions;
 using System.Collections.Generic;
 using System.Net;
+using System.Data.Entity;
+using Memberships.Entities;
 
 namespace Memberships.Controllers
 {
@@ -462,7 +464,7 @@ namespace Memberships.Controllers
                         UserName = model.Email,
                         Email = model.Email,
                         FirstName = model.FirstName,
-                         
+
                         IsActive = true,
                         Registered = DateTime.Now,
                         EmailConfirmed = true
@@ -479,15 +481,15 @@ namespace Memberships.Controllers
 
             return View(model);
         }
-        [Authorize(Roles ="Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Edit(string userId)
         {
-            if(userId == null || userId.Equals(string.Empty))
+            if (userId == null || userId.Equals(string.Empty))
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             ApplicationUser user = await UserManager.FindByIdAsync(userId);
-            if(user == null)
+            if (user == null)
             {
                 return HttpNotFound();
             }
@@ -504,28 +506,28 @@ namespace Memberships.Controllers
         [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit (UserViewModel model)
+        public async Task<ActionResult> Edit(UserViewModel model)
         {
             try
             {
-                if(model == null)
+                if (model == null)
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
                 }
-                if(ModelState.IsValid)
+                if (ModelState.IsValid)
                 {
                     var user = await UserManager.FindByIdAsync(model.Id);
-                    if(user != null)
+                    if (user != null)
                     {
                         user.Email = model.Email;
                         user.UserName = model.Email;
                         user.FirstName = model.FirstName;
-                        if(!user.PasswordHash.Equals(model.Password))
+                        if (!user.PasswordHash.Equals(model.Password))
                         {
                             user.PasswordHash = UserManager.PasswordHasher.HashPassword(model.Password);
                         }
                         var result = await UserManager.UpdateAsync(user);
-                        if(result.Succeeded)
+                        if (result.Succeeded)
                         {
                             return RedirectToAction("Index", "Account");
                         }
@@ -574,7 +576,7 @@ namespace Memberships.Controllers
                     var user = await UserManager.FindByIdAsync(model.Id);
                     if (user != null)
                     {
-                    
+
                         var result = await UserManager.DeleteAsync(user);
                         if (result.Succeeded)
                         {
@@ -588,10 +590,91 @@ namespace Memberships.Controllers
                     }
                 }
             }
-            catch {
-              
+            catch
+            {
+
             }
             return View(model);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> Subscription(string userId)
+        {
+            if (userId == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var model = new UserSubscriptionViewModel();
+            var db = new ApplicationDbContext();
+            model.UserSubscriptions = await (
+                from us in db.UserSubscriptions
+                join s in db.Subscriptions on us.SubscriptionId equals s.Id
+                where us.UserId.Equals(userId)
+                select new UserSubscriptionModel
+                {
+                    Id = us.SubscriptionId,
+                    StartDate = us.StartDate,
+                    EndDate = us.EndDate,
+                    Description = s.Description,
+                    RegistrationCode = s.RegistrationCode,
+                    Title = s.Title
+
+                }).ToListAsync();
+            var ids = model.UserSubscriptions.Select(us => us.Id);
+            // SubscriptionModel
+            model.Subscriptions = await db.Subscriptions.Where(s => !ids.Contains(s.Id)).ToListAsync();
+            model.DisableDropDown = model.Subscriptions.Count.Equals(0);
+            model.UserId = userId;
+            return View(model);//441
+        }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Subscription(UserSubscriptionViewModel model)
+        {
+            try
+            {
+                if (model == null)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                }
+                if (ModelState.IsValid)
+                {
+                    var db = new ApplicationDbContext();
+                    db.UserSubscriptions.Add(new UserSubscription
+                    {
+                        UserId = model.UserId,
+                        SubscriptionId = model.SubscriptionId,
+                        StartDate = DateTime.Now,
+                        EndDate = DateTime.MaxValue
+                    });
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch { }
+            return RedirectToAction("Subscription", "Account", new { userId = model.UserId });
+        }
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> RemoveUserSubscription(int subscriptionId,string userId )
+        {
+            try
+            {
+                if (userId == null || userId.Length.Equals(0) ||subscriptionId <= 0)
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+                }
+                if (ModelState.IsValid)
+                {
+                    var db = new ApplicationDbContext();
+                    var subscriptions = db.UserSubscriptions.Where(u =>
+                            u.UserId.Equals(userId) &&
+                            u.SubscriptionId.Equals(subscriptionId));
+                    db.UserSubscriptions.RemoveRange(subscriptions);
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch { }
+            return RedirectToAction("Subscription", "Account", new { userId = userId });
         }
         #region Helpers
         // Used for XSRF protection when adding external logins
